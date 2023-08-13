@@ -1,25 +1,29 @@
-import logo from './logo.svg';
-import './App.css';
+import { useEffect } from 'react';
 
-function App() {
+import Header from './Header';
+import Main from './Main';
+
+export default function App() {
+  useEffect(() => {
+    // async function question() {
+    //   const data = await fetch(`http://localhost:8000/questions`);
+    //   const question = await data.json();
+    //   console.log(question);
+    // }
+    // question();
+    fetch(`http://localhost:8000/questions`)
+      .then((res) => res.json())
+      .then((data) => console.log(data))
+      .catch((err) => console.err('Error'));
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app">
+      <Header />
+      <Main>
+        <p>1/15</p>
+        <p>Question?</p>
+      </Main>
     </div>
   );
 }
-
-export default App;

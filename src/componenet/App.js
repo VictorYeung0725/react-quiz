@@ -4,16 +4,17 @@ import Error from './Error';
 import Header from './Header';
 import Loader from './Loader';
 import Main from './Main';
+import NextButton from './NextButton';
 import Question from './Question';
 import StartScreen from './StartScreen';
 
 const initialState = {
-  question: [],
+  questions: [],
   //loading,error,ready, active,finished
   status: 'loading',
   index: 0,
   answer: null,
-  score: 0,
+  points: 0,
 };
 
 function reducer(state, action) {
@@ -21,7 +22,7 @@ function reducer(state, action) {
     case 'dataReceived':
       return {
         ...state,
-        question: action.payload,
+        questions: action.payload,
         status: 'ready',
       };
     case 'dataFailed':
@@ -35,14 +36,20 @@ function reducer(state, action) {
         status: 'active',
       };
     case 'newAnswer':
-      const question = state.questions.at(state.index);
+      const question1 = state.questions.at(state.index);
       return {
         ...state,
         answer: action.payload,
-        score:
-          action.payload === question.correctOption
-            ? state.score + 1
-            : state.score,
+        points:
+          action.payload === question1.correctOption
+            ? state.points + question1.points
+            : state.points,
+      };
+    case 'nextQuestion':
+      return {
+        ...state,
+        index: state.index + 1,
+        answer: null,
       };
     default:
       throw new Error()('Action Unknown');
@@ -50,19 +57,19 @@ function reducer(state, action) {
 }
 
 export default function App() {
-  const [{ question, status, index, answer }, dispatch] = useReducer(
+  const [{ questions, status, index, answer }, dispatch] = useReducer(
     reducer,
     initialState
   );
 
-  const numQuestion = question.length;
+  const numQuestion = questions.length;
   useEffect(() => {
-    // async function question() {
+    // async function questions() {
     //   const data = await fetch(`http://localhost:8000/questions`);
-    //   const question = await data.json();
-    //   console.log(question);
+    //   const questions = await data.json();
+    //   console.log(questions);
     // }
-    // question();
+    // questions();
     fetch(`http://localhost:8000/questions`)
       .then((res) => res.json())
       .then((data) => dispatch({ type: 'dataReceived', payload: data }))
@@ -79,11 +86,14 @@ export default function App() {
           <StartScreen numQuestion={numQuestion} dispatch={dispatch} />
         )}
         {status === 'active' && (
-          <Question
-            question={question[index]}
-            dispatch={dispatch}
-            answer={answer}
-          />
+          <>
+            <Question
+              questions={questions[index]}
+              dispatch={dispatch}
+              answer={answer}
+            />
+            <NextButton dispatch={dispatch} answer={answer} />
+          </>
         )}
       </Main>
     </div>

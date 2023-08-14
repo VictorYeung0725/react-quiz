@@ -1,12 +1,18 @@
 import { useEffect, useReducer } from 'react';
 import Error from './Error';
+import FinishedScreen from './FinishedScreen';
+import Footer from './Footer';
 
 import Header from './Header';
 import Loader from './Loader';
 import Main from './Main';
 import NextButton from './NextButton';
+import ProgressBar from './ProgressBar';
 import Question from './Question';
 import StartScreen from './StartScreen';
+import Timmer from './Timmer';
+
+const SECS_PER_QUESTION = 10;
 
 const initialState = {
   questions: [],
@@ -15,6 +21,8 @@ const initialState = {
   index: 0,
   answer: null,
   points: 0,
+  highscore: 0,
+  secondRemining: null,
 };
 
 function reducer(state, action) {
@@ -34,6 +42,7 @@ function reducer(state, action) {
       return {
         ...state,
         status: 'active',
+        secondRemining: state.questions.length * SECS_PER_QUESTION,
       };
     case 'newAnswer':
       const question1 = state.questions.at(state.index);
@@ -51,18 +60,40 @@ function reducer(state, action) {
         index: state.index + 1,
         answer: null,
       };
+
+    case 'finished':
+      return {
+        ...state,
+        status: 'finished',
+        highscore:
+          state.points > state.highscore ? state.points : state.highscore,
+      };
+    case 'restart':
+      return { ...initialState, questions: state.questions, status: 'ready' };
+    case 'tick':
+      return {
+        ...state,
+        secondRemining: state.secondRemining - 1,
+        status: state.secondRemining === 0 ? 'finished' : state.status,
+      };
     default:
       throw new Error()('Action Unknown');
   }
 }
 
 export default function App() {
-  const [{ questions, status, index, answer }, dispatch] = useReducer(
-    reducer,
-    initialState
-  );
+  const [
+    { questions, status, index, answer, points, highscore, secondRemining },
+    dispatch,
+  ] = useReducer(reducer, initialState);
 
   const numQuestion = questions.length;
+  const maxPossiblePoints = questions.reduce(
+    (prev, cur) => prev + cur.points,
+    0
+  );
+  console.log(maxPossiblePoints);
+
   useEffect(() => {
     // async function questions() {
     //   const data = await fetch(`http://localhost:8000/questions`);
@@ -87,13 +118,36 @@ export default function App() {
         )}
         {status === 'active' && (
           <>
+            <ProgressBar
+              index={index}
+              numQuestions={numQuestion}
+              points={points}
+              maxPossiblePoints={maxPossiblePoints}
+              answer={answer}
+            />
             <Question
               questions={questions[index]}
               dispatch={dispatch}
               answer={answer}
             />
-            <NextButton dispatch={dispatch} answer={answer} />
+            <Footer>
+              <Timmer dispatch={dispatch} secondRemining={secondRemining} />
+              <NextButton
+                dispatch={dispatch}
+                answer={answer}
+                index={index}
+                numQuestion={numQuestion}
+              />
+            </Footer>
           </>
+        )}
+        {status === 'finished' && (
+          <FinishedScreen
+            points={points}
+            maxPossiblePoints={maxPossiblePoints}
+            highscore={highscore}
+            dispatch={dispatch}
+          />
         )}
       </Main>
     </div>
